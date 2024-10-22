@@ -1,0 +1,11 @@
+streamlit
+pandas
+pymongo
+wordcloud
+requests
+beautifulsoup4
+bs4
+matplotlib
+nltk
+subprocess
+openpyxl
