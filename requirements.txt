@@ -9,3 +9,13 @@ matplotlib
 nltk
 subprocess
 openpyxl
+uvicorn
+typing
+fastapi
+pydantic
+python-dotenv
+transformers
+sentencepiece
+torch
+torchvision
+torchaudio 
