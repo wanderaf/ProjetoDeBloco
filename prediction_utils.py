@@ -37,6 +37,7 @@ def fetch_units():
 def fetch_last_12_months_by_procedure(unit_id):
     """
     Consulta os últimos 12 registros por procedimento para uma unidade específica.
+    Inclui o código e a descrição do procedimento.
     """
     client = MongoClient("mongodb://localhost:27017/")
     db = client["ANALISE"]
@@ -46,7 +47,7 @@ def fetch_last_12_months_by_procedure(unit_id):
         {"$match": {"PA_CODUNI": unit_id}},
         {"$sort": {"PA_MVMR": -1}},
         {"$group": {
-            "_id": "$PA_PROC_ID",
+            "_id": {"PA_PROC_ID": "$PA_PROC_ID", "IP_DSCR": "$IP_DSCR"},  # Agrupamento por ID e Descrição
             "records": {"$push": {
                 "Quantidade Aprovado": "$TOTAL_PA_QTDAPR",
                 "Valor Aprovado": "$TOTAL_PA_VALAPR",
@@ -69,20 +70,25 @@ def fetch_last_12_months_by_procedure(unit_id):
 
 def create_context_by_procedure(data):
     """
-    Cria um contexto formatado para cada procedimento com os últimos 12 meses.
+    Cria um contexto formatado para cada procedimento com os últimos 12 meses,
+    incluindo o código e a descrição do procedimento.
     """
     contexts = []
     for procedure in data:
-        procedure_id = procedure["_id"]
+        procedure_id = procedure["_id"]["PA_PROC_ID"]
+        procedure_desc = procedure["_id"]["IP_DSCR"] or "Descrição não disponível"
+        procedure_label = f"{procedure_id} - {procedure_desc}"
+
         records = procedure["records"]
-        context = f"Código do procedimento {procedure_id}:\n"
+        context = f"Procedimento {procedure_label}:\n"
         for record in records:
             qtdapr = record.get("Quantidade Aprovado", "N/A")
             valapr = record.get("Valor Aprovado", "N/A")
             mvmr = record.get("Ano/mês", "N/A")
             context += f"Ano/mês: {mvmr}, Quantidade Aprovado: {qtdapr}, Valor Aprovado: R$ {valapr}\n"
-        contexts.append({"procedure_id": procedure_id, "context": context})
+        contexts.append({"procedure_label": procedure_label, "context": context})
     return contexts
+
 
 def parse_prediction(prediction):
     """
@@ -103,6 +109,7 @@ def parse_prediction(prediction):
 def predict_totals_by_procedure(unit_id):
     """
     Realiza previsões por procedimento para uma unidade específica e retorna os resultados em formato tabular.
+    Inclui o código e a descrição do procedimento.
     """
     data = fetch_last_12_months_by_procedure(unit_id)
     contexts = create_context_by_procedure(data)
@@ -112,7 +119,7 @@ def predict_totals_by_procedure(unit_id):
     total_valapr = 0
 
     for item in contexts:
-        procedure_id = item["procedure_id"]
+        procedure_label = item["procedure_label"]
         context = item["context"]
 
         # Criar o prompt para o procedimento
@@ -135,14 +142,14 @@ def predict_totals_by_procedure(unit_id):
         total_valapr += valapr
 
         results.append({
-            "Código do procedimento": procedure_id,
+            "Procedimento": procedure_label,
             "Quantidade Aprovado": qtdapr,
             "Valor Aprovado": valapr
         })
 
     # Adicionar linha de totais
     results.append({
-        "Código do procedimento": "TOTAL GERAL",
+        "Procedimento": "TOTAL GERAL",
         "Quantidade Aprovado": total_qtdapr,
         "Valor Aprovado": total_valapr
     })

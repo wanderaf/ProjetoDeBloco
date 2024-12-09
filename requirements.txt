@@ -18,4 +18,7 @@ transformers
 sentencepiece
 torch
 torchvision
-torchaudio 
+torchaudio
+matplotlib
+google.generativeai
+pymupdf
