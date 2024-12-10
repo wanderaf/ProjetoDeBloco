@@ -9,7 +9,7 @@ def introduction_page():
     st.title("Bem-vindo ao Projeto de Visualização de Dados do SUS")
     st.write("""
     Este projeto utiliza dados oriundos do FTP do SUS e tem como objetivo auxiliar os gestores públicos na elaboração 
-    de políticas públicas de saúde, bem como ajudar os usuários a identificar onde buscar atendimento. 
+    de políticas públicas de saúde, bem como ajudar a identificar onde buscar atendimento. 
     Através dessa plataforma, é possível visualizar e analisar dados de saúde de forma acessível e interativa.
     """)
 

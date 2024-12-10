@@ -10,25 +10,42 @@ import streamlit as st
 app = FastAPI()
 
 @st.cache_data
-def get_units():
+def get_units(query: str = None):
     """
-    Recupera as unidades de saúde (PA_CODUNI e FANTASIA) da coleção SIA_ANALISE.
+    Recupera as unidades de saúde (PA_CODUNI e FANTASIA) da coleção SIA_ANALISE, com resultados únicos.
+    Args:
+        query (str, optional): Filtro para buscar unidades pelo código ou nome fantasia.
+    Returns:
+        list: Lista única de unidades que correspondem ao filtro.
     """
     try:
         client = get_mongo_client()
         db = client["ANALISE"]
         collection = db["SIA_ANALISE"]
 
-        # Recuperar dados únicos
-        query_filter = {"FANTASIA": {"$exists": True}}
+        # Aplicar filtro se `query` for fornecido
+        query_filter = {}
+        if query:
+            query_filter = {
+                "$or": [
+                    {"PA_CODUNI": {"$regex": query, "$options": "i"}},  # Busca parcial no PA_CODUNI
+                    {"FANTASIA": {"$regex": query, "$options": "i"}}    # Busca parcial no FANTASIA
+                ]
+            }
+
+        # Recuperar dados com base no filtro
         data = list(collection.find(query_filter, {"PA_CODUNI": 1, "FANTASIA": 1, "_id": 0}))
 
-        # Processar dados para retornar como lista de dicionários
-        units = [{"Código da unidade": item["PA_CODUNI"], "Fantasia": item["FANTASIA"]} for item in data if "PA_CODUNI" in item and "FANTASIA" in item]
+        # Garantir unicidade dos resultados
+        unique_data = {(item["PA_CODUNI"], item["FANTASIA"]) for item in data if "PA_CODUNI" in item and "FANTASIA" in item}
+
+        # Retornar como lista de dicionários
+        units = [{"Código da unidade": coduni, "Fantasia": fantasia} for coduni, fantasia in unique_data]
 
         return units
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro ao recuperar unidades: {e}")
+
 
 
 # Configuração da conexão com o MongoDB

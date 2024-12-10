@@ -16,14 +16,15 @@ def consulta_unidades_page():
         query = st.text_input("Digite um texto para busca (PA_CODUNI ou parte de FANTASIA):")
         if st.button("Consultar", key="consulta"):
             if query.strip():
-                data, error = get_units(query)
-                if error:
-                    st.error(error)
-                elif data:
-                    st.success("Registros encontrados:")
-                    st.json(data)
-                else:
-                    st.warning("Nenhum registro encontrado.")
+                try:
+                    data = get_units(query)
+                    if data:
+                        st.success("Registros encontrados:")
+                        st.json(data)
+                    else:
+                        st.warning("Nenhum registro encontrado.")
+                except Exception as e:
+                    st.error(f"Erro ao consultar unidades: {e}")
             else:
                 st.warning("Por favor, digite um valor para consulta.")
 
@@ -74,11 +75,11 @@ def consulta_unidades_page():
                         "PA_NAT_JUR": PA_NAT_JUR,
                         "IP_DSCR": IP_DSCR,
                     }
-                    success, error = insert_unit(payload)
-                    if success:
+                    try:
+                        success = insert_unit(payload)
                         st.success("Registro inserido com sucesso!")
                         st.json(success)
-                    else:
-                        st.error(error)
+                    except Exception as e:
+                        st.error(f"Erro ao inserir registro: {e}")
                 else:
                     st.warning("Todos os campos obrigatórios devem ser preenchidos.")
